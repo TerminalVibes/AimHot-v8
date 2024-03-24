@@ -372,7 +372,7 @@ do
         for i,v in pairs(getPlayers(players)) do
             if (locpl ~= v and (settings.ignoreteam==true and utility.sameteam(v)==false or settings.ignoreteam == false)) then
                 local character = utility.getcharacter(v)
-                if character and isDescendantOf(character, game) == true then
+                if character and isDescendantOf(character, workspace) == true then
                     local hash = hashes[v]
                     local part = hash or findFirstChild(character, settings.name or "HumanoidRootPart") or findFirstChild(character, "HumanoidRootPart") or character.PrimaryPart
                     if hash == nil then hashes[v] = part end
