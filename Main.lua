@@ -366,9 +366,10 @@ do
 
     local hashes = {}
     function utility.getClosestMouseTarget(settings)
-        local closest, temp = nil, settings.fov or math.huge
-        local plr
+        local closest, temp = nil, 2500 or math.huge
+	local fov = settings.fov
 
+        local plr
         for i,v in pairs(getPlayers(players)) do
             if (locpl ~= v and (settings.ignoreteam==true and utility.sameteam(v)==false or settings.ignoreteam == false)) then
                 local character = utility.getcharacter(v)
@@ -380,8 +381,8 @@ do
                         local legal = true
 
                         local rp = part:GetRenderCFrame().p
-                        local distance = utility.getDistanceFromMouse(rp)
-                        if temp <= distance then
+                        local mouseDistance = utility.getDistanceFromMouse(rp)
+                        if mouseDistance > fov then
                             legal = false
                         end
 
@@ -405,10 +406,12 @@ do
                         end
 
                         if legal then
-                            local dist1
-                            temp = distance
-                            closest = part
-                            plr = v
+                            local distance = (rp - camera.CFrame.Position).Magnitude
+                            if distance < temp then
+                                temp = distance
+                                closest = part
+                                plr = v
+                            end
                         end
                     end
                 end
