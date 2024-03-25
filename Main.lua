@@ -368,59 +368,44 @@ do
     local hashes = {}
     function utility.getTarget(settings)
 		local fov = settings.fov or math.huge
+		local ignoreteam = settings.ignoreteam
+		local checkifalive = settings.checkifalive
+		local ignorewalls = settings.ignorewalls
+		local maxobscuringparts = settings.maxobscuringparts or 0
+		local partName = settings.name or "HumanoidRootPart"
+
 		local origin = camera.CFrame.Position
-
-        local closest, temp = nil, 2500
-        local plr
-        for i,v in pairs(getPlayers(players)) do
-            if (locpl ~= v and (settings.ignoreteam==true and utility.sameteam(v)==false or settings.ignoreteam == false)) then
-                local character = utility.getcharacter(v)
-                if character and character.Parent == workspace then
-                    local hash = hashes[v]
-                    local part = hash or findFirstChild(character, settings.name or "HumanoidRootPart") or findFirstChild(character, "HumanoidRootPart") or character.PrimaryPart
-                    if hash == nil then hashes[v] = part end
-                    if part and isDescendantOf(part, game) == true then
-                        local legal = true
-
-                        local rp = part:GetRenderCFrame().p
-                        local mouseDistance = utility.getDistanceFromMouse(rp)
-                        if mouseDistance > fov then
-                            legal = false
-                        end
-
-                        if legal then
-                            if settings.checkifalive then
-                                local isalive = utility.isalive(character, part)
-                                if not isalive then
-                                    legal = false
-                                end
-                            end
-                        end
-
-                        if legal then
-                            local visible = true
-                            if settings.ignorewalls == false then
-                                local vis = utility.isvisible(character, part, (settings.maxobscuringparts or 0))
-                                if not vis then
-                                    legal = false
-                                end
-                            end
-                        end
-
-                        if legal then
-							local distance = (origin - rp).Magnitude
-							if distance < temp then
-								temp = distance
-								closest = part
-								plr = v
+	
+		local plr
+		local closest, temp = nil, 2500
+		for i, v in ipairs(getPlayers(players)) do
+			if locpl ~= v and (ignoreteam and not utility.sameteam(v) or not ignoreteam) then
+				local character = utility.getcharacter(v)
+				if character and character.Parent == workspace then
+					local hash = hashes[v]
+					local part = hash or findFirstChild(character, partName) or character.PrimaryPart
+					if not hash then hashes[v] = part end
+					if part and part.Parent == workspace then
+						local rp = part:GetRenderCFrame().p
+						local mouseDistance = utility.getDistanceFromMouse(rp)
+						if mouseDistance <= fov then
+							if not checkifalive or utility.isalive(character, part) then
+								if ignorewalls or utility.isvisible(character, part, maxobscuringparts) then
+									local distance = (origin - rp).Magnitude
+									if distance < temp then
+										temp = distance
+										closest = part
+										plr = v
+									end
+								end
 							end
-                        end
-                    end
-                end
-            end
-        end -- who doesnt love 5 ends in a row?
-
-        return closest, temp, plr
+						end
+					end
+				end
+			end
+		end
+	
+		return closest, temp, plr
     end
     function utility.getClosestTarget(settings)
 
