@@ -381,17 +381,17 @@ do
 		for i, v in ipairs(getPlayers(players)) do
 			if locpl ~= v and (ignoreteam and not utility.sameteam(v) or not ignoreteam) then
 				local character = utility.getcharacter(v)
-				if character and character.Parent == workspace then
+				if character and isDescendantOf(character, workspace) then
 					local hash = hashes[v]
 					local part = hash or findFirstChild(character, partName) or character.PrimaryPart
 					if not hash then hashes[v] = part end
-					if part and part.Parent == workspace then
-						local rp = part:GetRenderCFrame().p
-						local mouseDistance = utility.getDistanceFromMouse(rp)
+					if part and isDescendantOf(part, workspace) then
+						local pos = part.Position
+						local mouseDistance = utility.getDistanceFromMouse(pos)
 						if mouseDistance <= fov then
 							if not checkifalive or utility.isalive(character, part) then
 								if ignorewalls or utility.isvisible(character, part, maxobscuringparts) then
-									local distance = (origin - rp).Magnitude
+									local distance = (origin - pos).Magnitude
 									if distance < temp then
 										temp = distance
 										closest = part
@@ -406,44 +406,6 @@ do
 		end
 	
 		return closest, temp, plr
-    end
-    function utility.getClosestTarget(settings)
-
-        local closest, temp = nil, math.huge
-        --local utility.myroot = utility.mychar and (findFirstChild(utility.mychar, settings.name or "HumanoidRootPart") or findFirstChild(utility.mychar, "HumanoidRootPart"))
-        
-        if utility.myroot then
-            for i,v in pairs(getPlayers(players)) do
-                if (locpl ~= v) and (settings.ignoreteam==true and utility.sameteam(v)==false or settings.ignoreteam == false) then
-                    local character = utility.getcharacter(v)
-                    if character then
-                        local hash = hashes[v]
-                        local part = hash or findFirstChild(character, settings.name or "HumanoidRootPart") or findFirstChild(character, "HumanoidRootPart")
-                        if hash == nil then hashes[v] = part end
-
-                        if part then
-                            local visible = true
-                            if settings.ignorewalls == false then
-                                local vis, p = utility.isvisible(character, part, (settings.maxobscuringparts or 0))
-                                if p <= (settings.maxobscuringparts or 0) then
-                                    visible = vis
-                                end
-                            end
-
-                            if visible then
-                                local distance = (utility.myroot.Position - part.Position).Magnitude
-                                if temp > distance then
-                                    temp = distance
-                                    closest = part
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-
-        return closest, temp
     end
 
     spawn(function()
@@ -997,7 +959,6 @@ do
                 end
 
                 if stop then
-                    -- getClosestTarget({mode = "mouse"}) later
                     target, _, closestplr = utility.getTarget({
                         ignoreteam = aimbot.ignoreteam;
                         ignorewalls = aimbot.ignorewalls;
