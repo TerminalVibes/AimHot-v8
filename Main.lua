@@ -100,8 +100,8 @@ end
 
 local function mergetab(a,b)
     local c = a or {}
-    for i,v in pairs(b or {}) do 
-        c[i] = v 
+    for i,v in pairs(b or {}) do
+        c[i] = v
     end
     return c
 end
@@ -110,7 +110,7 @@ local locpl = players.LocalPlayer
 local mouse = locpl:GetMouse()
 local camera = workspace.CurrentCamera
 workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function() -- if a script changes currentcamera
-    camera = workspace.CurrentCamera
+    camera = workspace.CurrentCamera or camera
 end)
 
 
@@ -207,6 +207,7 @@ do
     local findPartOnRayWithIgnoreList = workspace.FindPartOnRayWithIgnoreList
     local findPartOnRay = workspace.FindPartOnRay
     local findFirstChild = game.FindFirstChild
+	local spawn, wait = task.spawn, task.wait
 
     local function raycast(ray, ignore, callback)
         local ignore = ignore or {}
@@ -365,14 +366,16 @@ do
 
 
     local hashes = {}
-    function utility.getClosestMouseTarget(settings)
-        local closest, temp = nil, settings.fov or math.huge
-        local plr
+    function utility.getTarget(settings)
+		local fov = settings.fov or math.huge
+		local origin = camera.CFrame.Position
 
+        local closest, temp = nil, 2500
+        local plr
         for i,v in pairs(getPlayers(players)) do
             if (locpl ~= v and (settings.ignoreteam==true and utility.sameteam(v)==false or settings.ignoreteam == false)) then
                 local character = utility.getcharacter(v)
-                if character and isDescendantOf(character, workspace) == true then
+                if character and character.Parent == workspace then
                     local hash = hashes[v]
                     local part = hash or findFirstChild(character, settings.name or "HumanoidRootPart") or findFirstChild(character, "HumanoidRootPart") or character.PrimaryPart
                     if hash == nil then hashes[v] = part end
@@ -380,8 +383,8 @@ do
                         local legal = true
 
                         local rp = part:GetRenderCFrame().p
-                        local distance = utility.getDistanceFromMouse(rp)
-                        if temp <= distance then
+                        local mouseDistance = utility.getDistanceFromMouse(rp)
+                        if mouseDistance > fov then
                             legal = false
                         end
 
@@ -405,10 +408,12 @@ do
                         end
 
                         if legal then
-                            local dist1
-                            temp = distance
-                            closest = part
-                            plr = v
+							local distance = (origin - rp).Magnitude
+							if distance < temp then
+								temp = distance
+								closest = part
+								plr = v
+							end
                         end
                     end
                 end
@@ -975,7 +980,7 @@ do
         if aimbot.locktotarget == true then
             local cchar = utility.getcharacter(closestplr)
             if target == nil or isDescendantOf(target, game) == false or closestplr == nil or closestplr.Parent == nil or cchar  == nil or isDescendantOf(cchar, game) == false then
-                target, _, closestplr = utility.getClosestMouseTarget({ -- closest to mouse or camera mode later just wait
+                target, _, closestplr = utility.getTarget({ -- closest to mouse or camera mode later just wait
                     ignoreteam = aimbot.ignoreteam;
                     ignorewalls = aimbot.ignorewalls;
                     maxobscuringparts = aimbot.maxobscuringparts;
@@ -1008,7 +1013,7 @@ do
 
                 if stop then
                     -- getClosestTarget({mode = "mouse"}) later
-                    target, _, closestplr = utility.getClosestMouseTarget({
+                    target, _, closestplr = utility.getTarget({
                         ignoreteam = aimbot.ignoreteam;
                         ignorewalls = aimbot.ignorewalls;
                         maxobscuringparts = aimbot.maxobscuringparts;
@@ -1019,7 +1024,7 @@ do
                 end
             end
         else
-            target = utility.getClosestMouseTarget({
+            target = utility.getTarget({
                 ignoreteam = aimbot.ignoreteam;
                 ignorewalls = aimbot.ignorewalls;
                 maxobscuringparts = aimbot.maxobscuringparts;
@@ -2091,10 +2096,10 @@ do
 
     ah8.enabled = true
     function ah8:close()
-        spawn(function() pcall(visuals.End, visuals) end)
-        spawn(function() pcall(aimbot.End, aimbot) end)
-        spawn(function() pcall(hud.End, hud) end)
-        spawn(function()
+        task.spawn(function() pcall(visuals.End, visuals) end)
+        task.spawn(function() pcall(aimbot.End, aimbot) end)
+        task.spawn(function() pcall(hud.End, hud) end)
+        task.spawn(function()
             for i,v in pairs(connections) do
                 pcall(function() v:Disconnect() end)
             end
@@ -2171,7 +2176,7 @@ end)
 AimbotToggle:AddToggle({
 	Text = "Lock To Target",
 	State = aimbot.locktotarget,
-}, function(state) 
+}, function(state)
     aimbot.locktotarget = state
 end)
 
